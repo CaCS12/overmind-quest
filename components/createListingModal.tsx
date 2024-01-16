@@ -33,12 +33,14 @@ import { User } from "@/db/schema";
 */
 export default function CreateListingModal() {
   const [user, setUser] = useState<User | null>(null); // The current user
+
   const [name, setName] = useState<string>(""); // The name of the listing
   const [description, setDescription] = useState<string>(""); // The description of the listing
   const [listingPrice, setListingPrice] = useState<string>(""); // The price of the item
   const [url, setUrl] = useState<string>(""); // The image URL of the listing
   const [quantity, setQuantity] = useState<string>("1"); // The quantity of the listing
   const [category, setCategory] = useState<Category | null>(null); // The category of the listing
+
   const [loading, setLoading] = useState<boolean>(false); // Whether the submission is loading
   const [success, setSuccess] = useState<boolean>(false); // Whether the listing was successfully created
   const [error, setError] = useState<boolean>(false); // Whether there was an error creating the listing
@@ -53,6 +55,11 @@ export default function CreateListingModal() {
       TODO: If the session exists and the user is logged in, get the user from the database and 
       update the user state.
     */
+    if (session && status === "authenticated") {
+      getUser(session?.user?.name || "").then((user) => {
+        setUser(user);
+      });
+    }
 
   }, [session]);
 
@@ -64,38 +71,68 @@ export default function CreateListingModal() {
     /* 
       TODO: If the user is not logged in, return.
     */
+    if (!user) return;
 
     
     /*
       TODO: Set loading to true.
     */
+    setLoading(true);
 
 
     /* 
       TODO: Parse the quantity and listing price as an integer and float, respectively. If either is 
       invalid, set error to true and return.
     */
-
+    const quantityInt = parseInt(quantity);
+    const listingPriceFloat = parseFloat(listingPrice);
+    if (isNaN(quantityInt) || isNaN(listingPriceFloat)) {
+      setError(true);
+      return;
+    }
 
     /* 
       TODO: Add the new item to the database. 
       HINT: Create a new id for the item using Math.random().toString(36).substring(7)
     */
+    const id = Math.random().toString(36).substring(7);
+    const newItem = {
+      id,
+      owner : user.username,
+      title: name,
+      description,
+      price: listingPriceFloat,
+      totalSupply: quantityInt,
+      availableSupply: quantityInt,
+      listed: 1,
+      image: url,
+      category: category?.value || "other",
+    };
+    await addNewItem(newItem);
+
 
     /*
       TODO: Set loading to false and success to true.
     */
-
+    setLoading(false);
+    setSuccess(true);
 
     /* 
       TODO: Clear the form fields.
     */
+    setName("");
+    setDescription("");
+    setListingPrice("");
+    setUrl("");
+    setQuantity("");
+    setCategory(null);
 
 
     /* 
       TODO: Redirect the user to their page with the listings tab selected.
     */
-
+    
+    window.location.href = `/seller/${user.username}`;
   };
 
   /*

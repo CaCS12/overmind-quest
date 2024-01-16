@@ -17,6 +17,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { User } from "@/db/schema";
 import { getSession } from "next-auth/react";
+import { get } from "http";
 
 /* 
   This component is responsible for rendering the edit profile modal. It is displayed when the user
@@ -44,7 +45,17 @@ export default function EditProfileModal({
       TODO: Get the current session, and if the user is logged in, get the user from the database and
       update the user state, bio state, profilePic state, shippingAddress state, and password state.
     */
-
+    getSession().then((session) => {
+      if (session && session.user && session.user.name) {
+        getUser(session.user.name).then((user) => {
+          setUser(user);
+          setBio(user?.bio || "");
+          setProfilePic(user?.profilePic || "");
+          setShippingAddress(user?.shippingAddress || "");
+          setPassword(user?.password || "");
+        });
+      }
+    });
   }, []);
 
   /* 
@@ -52,8 +63,20 @@ export default function EditProfileModal({
     update the user state with the new information.
   */
   const onSubmit = async () => {
-    
-  }
+    setLoading(true);
+    const updatedUser = await updateUser({
+      ...user,
+      bio,
+      profilePic,
+      shippingAddress,
+      password,
+      username: user?.username || "",
+    });
+    console.log(updatedUser)
+    setUser(updatedUser);
+    setLoading(false);
+    setSuccess(true);
+  } 
 
   return (
     <Dialog>

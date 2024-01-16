@@ -28,7 +28,7 @@ export default function WithdrawModal() {
   const [success, setSuccess] = useState<boolean>(false); // Whether the withdrawal was successfully created
   const [error, setError] = useState<boolean>(false); // Whether there was an error withdrawing the balance
   const [amount, setAmount] = useState<string>("0"); // The amount of balance in the shop
- 
+
   const { data: session } = useSession(); // The current session
 
   /*
@@ -38,11 +38,33 @@ export default function WithdrawModal() {
     /* 
       TODO: Get the withdraw URL query parameter, and if it exists, set the showDialog state to true.
     */
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("withdraw") === "true") {
+      setShowDialog(true);
+    }
 
     /* 
       TODO: If the session exists and the user is logged in, get the user from the database and
       use the user's balance to update the balance state.
     */
+    if (session) {
+      getUser(session?.user?.name ?? "")
+      .then((user) => {
+        if (user) {
+          getUserShopBalance(user.username)
+          .then((balance) => {
+            setAmount(balance?.toString() ?? "0");
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+    
 
   }, [session]);
 
@@ -53,25 +75,48 @@ export default function WithdrawModal() {
     /* 
       TODO: Set loading to true.
     */
+    console.log("loading")
+    setLoading(true);
 
     /*
       TODO: Return if the session or the session name does not exist.
     */
+      console.log("session")
+    if (!session || !session.user?.name) {
+      return;
+    }
 
 
     /* 
       TODO: Get the user from the database, and if the user does not exist, set error to true and return.
     */
+    console.log("user")
+    const user = await getUser(session.user.name);
+    if (!user) {
+      setError(true);
+      return;
+    }
 
     /* 
       TODO: Withdraw the balance from the shop and set success to true.
     */
+      console.log(amount)
+      try {
+        await withdrawBalanceFromShop(user.username, Number(amount));
+        setSuccess(true);
+      } catch (error) {
+        console.error(error);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
 
 
     /* 
       TODO: Remove the withdraw URL query parameter from the URL and set showDialog to false.
     */
-
+      window.history.replaceState(null, "", window.location.pathname);
+      setShowDialog(false);
   };
 
   return (

@@ -22,6 +22,9 @@ export default function ReviewCard(
     /* 
       TODO: Get the author of the review and update the author state.
     */
+    getUser(review.author).then((author) => {
+      setAuthor(author);
+    });
     
   }, [review]);
 
@@ -61,7 +64,7 @@ export default function ReviewCard(
           /* 
             TODO: Display the formatted date the review was created.
           */
-          "PLACEHOLDER"
+          review.timestamp
         }
       </span>
       <div>
@@ -70,7 +73,7 @@ export default function ReviewCard(
             /* 
               TODO: Display the review comment.
             */
-            "PLACEHOLDER"
+            review.comment
           }
         </span>
       </div>

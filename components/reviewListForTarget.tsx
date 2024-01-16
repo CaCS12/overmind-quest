@@ -22,31 +22,34 @@ export default function ReviewListForTarget({ target }: { target: string }) {
     /* 
       TODO: Set loading to true.
     */
+    setLoading(true);
 
     /*
       TODO: Get the reviews for the target and update the reviews state.
     */    
+    getReviewsForTarget(target).then((reviews) => {
+      setReviews(reviews || []);
+      setLoading(false);
+    });
     
   }, [target]);
 
 
-  /*
-    TODO: If the page is loading, display the provided loading message.
-    ```
+
+    // TODO: If the page is loading, display the provided loading message.
+    if (loading) return (
     <div className="flex flex-col gap-4 items-center py-4 h-full">
       <span className="text-2xl text-gray-500">Loading...</span>
     </div>
-    ```
-  */
+    )
 
-  /*
-    TODO: If there are no reviews, display a message saying so.
-    ```
+
+    //TODO: If there are no reviews, display a message saying so.
+    if (reviews.length === 0 ) return (
     <div className="flex flex-col gap-4 items-center py-4 h-full">
-      <span className="text-2xl text-gray-500">No reviews yet</span>
+      <span className="text-2xl text-gray-500">No reviews yet...</span>
     </div>
-    ```
-  */
+    )
 
   /*
     TODO: Otherwise, display the reviews.
@@ -56,8 +59,12 @@ export default function ReviewListForTarget({ target }: { target: string }) {
       {
         /* 
           TODO: Map through each of the reviews and display a ReviewCard component for each one.
-        */
-        "PLACEHOLDER"
+        */ 
+        reviews.map((review, index) => {
+          return (
+            <ReviewCard key={index} review={review} />
+          )
+        })
       }
     </div>
   );

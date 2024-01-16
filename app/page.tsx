@@ -36,6 +36,7 @@ export default function Home() {
   /* 
     TODO: Get the category and search query from the URL.
   */
+  const searchParams = useSearchParams()
   const categoryParam = null; // PLACEHOLDER
   const searchParam = null; // PLACEHOLDER
 
@@ -43,17 +44,19 @@ export default function Home() {
     On page load, set the category and search query based on the URL.
   */
   useEffect(() => {
-    /* 
+    const categoryParam = searchParams.get('category')
+    const searchParam = searchParams.get('search')
+      /* 
       TODO: If the category param is set, set the category state variable to the corresponding category.
       Otherwise, leave the category state variable as null.
       HINT: Use the valueToCategory function to convert the category param to a Category object.
     */
-
+    setCategory(categoryParam ? valueToCategory(categoryParam) : null);
     /* 
       TODO: If the search param is set, set the search state variable to the corresponding search query.
       Otherwise, leave the search state variable as an empty string.
     */
-    
+    setSearch(searchParam ? searchParam : '');
   }, []);
 
   /* 
@@ -74,14 +77,17 @@ export default function Home() {
     /*
       TODO: Set the isLoading state variable to true.
     */
+    setIsLoading(true);
 
     /* 
       TODO: Get the items from the database with the correct filters and sorting method. Then, update
       the items state variable and set the isLoading state variable to false.
-
       HINT: Filter for only listed items as well. 
     */
-    
+    getItems({ category: category?.value, search, sort: sorting?.value, listed: 1}).then((items) => {
+      setItems(items);
+      setIsLoading(false);
+    });
   }, [sorting, category, search]);
 
   return (

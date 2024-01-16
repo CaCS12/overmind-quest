@@ -10,6 +10,7 @@ import { User } from "@/db/schema";
 import { getSession } from "next-auth/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCartIcon } from "lucide-react";
+import { UserStatus } from "@/lib/types";
 
 /* 
   This is the cart page. It is responsible for displaying the items in the cart, and allowing the 
@@ -17,6 +18,7 @@ import { ShoppingCartIcon } from "lucide-react";
 */
 export default function Cart() {
   const [user, setUser] = useState<User | null>(null); // The current user
+  const [userStatus, setUserStatus] = useState(UserStatus.Visitor); // The status of the current user (seller, buyer, or visitor)
   const [cartItems, setCartItems] = useState<CartItem[]>([]); // The items in the card
   const [cartCheckoutLoading, setCartCheckoutLoading] =
     useState<boolean>(false); // Whether the cart is currently checking out
@@ -28,11 +30,13 @@ export default function Cart() {
     /*
       TODO: Get the cart items from local storage
     */
+    localStorage.getItem("cart");
 
     /*
       TODO: Parse the cart items as a CartItem array and update the cart items state
     */
-
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]") as CartItem[];
+    setCartItems(cart);
   }, []);
 
   /*
@@ -42,6 +46,13 @@ export default function Cart() {
     /*
       TODO: Get the current user from the session and update the user state
     */
+    getSession().then((session) => {
+      if (session) {
+        getUser(session?.user?.name || "").then((user) => {
+          setUser(user);
+        });
+      }
+    });
 
   }, []);
 
@@ -53,7 +64,7 @@ export default function Cart() {
       TODO: Dispatch an event to the window whenever the cart items change. 
       HINT: Dispatch an event with the name "cartUpdated"
     */
-
+    window.dispatchEvent(new Event("cartUpdated"));
   }, [cartItems]);
 
   /*
@@ -62,20 +73,31 @@ export default function Cart() {
   */
   const onCheckout = async () => {
     // TODO: If there is no user logged in, return
-
-
+    if (!user) {
+      return;
+    }
     // TODO: Get the cart items from local storage
+    localStorage.getItem("cart");
 
     // TODO: Parse the cart items as a CartItem array
+    const cartItems = JSON.parse(localStorage.getItem("cart") || "[]") as CartItem[];
 
     // TODO: Set the cart checkout loading state to true
-
+    setCartCheckoutLoading(true);
     
     /* 
       TODO: For each item in the cart, purchase the item using the purchaseItem function. Once all 
             items have been purchased, set the cart checkout loading state to false, empty the cart 
             in local storage, and redirect the user to their purchases page. 
     */
+    for (const item of cartItems) {
+      await purchaseItem(item.id, item.quantity, user.username);
+    }
+    setCartCheckoutLoading(false);
+    localStorage.setItem("cart", JSON.stringify([]));
+    setTimeout(() => {
+      window.location.href = `/seller/${user.username}`;
+    }, 1500);
     
   };
 

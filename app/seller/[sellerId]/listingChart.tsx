@@ -42,6 +42,18 @@ export default function ListingChart({ seller }: { seller: User }) {
         - category: The category
         - listed: Whether to show listed or unlisted items
     */
+    getItems({
+      user: seller.username,
+      sort: sorting?.value,
+      category: category?.value,
+      listed: 1,
+    }) 
+    .then((items) => {
+      setItems(items);
+    })
+    .catch((error) => {
+      console.error(error);
+    });
     
   }, [sorting, category, listed, seller]);
 
@@ -108,23 +120,25 @@ export default function ListingChart({ seller }: { seller: User }) {
           </Select>
         </div>
       </div>
-      {
-        /*
-          TODO: If there are no items, display the provided loading message. 
-          ```
+      {  
+          // TODO: If there are no items, display the provided loading message. 
+          // ```
+          items.length === 0 && (
           <div className="flex flex-col justify-center items-center w-full h-full">
             <AlertTriangle className="w-16 h-16 text-yellow-400" />
             <span className="text-xl">No listings found</span>
           </div>
-          ```
-        */
+          )
+          // ```
       }
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 h-full">
         {
           /*
             TODO: Paginate the items and map over each item and return an ItemCard component with the itemId prop set to the item's id.
           */
-          "PLACEHOLDER"
+          items.slice((pageNumber - 1) * pageSize, pageNumber * pageSize).map((item) => (
+            <ItemCard itemId={item.id} key={item.id} />
+          ))
         }
       </div>
       <div className="flex flex-row justify-center items-center gap-4">

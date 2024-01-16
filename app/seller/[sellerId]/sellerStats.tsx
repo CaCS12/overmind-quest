@@ -28,7 +28,12 @@ export default function SellerStats({ seller }: { seller: User }) {
       - The seller's average rating
       - The number of ratings the seller has received
     */
-    
+    getUserNumberOfSales(seller.username).then((sales) => setNumberOfSales(sales));
+    getUserNumberOfPurchases(seller.username).then((purchases) =>
+    setNumberOfPurchases(purchases)
+    );
+    getStarsForTarget(seller.username).then((stars) => setStars(stars));
+    getNumberOfRatingsForTarget(seller.username).then((count) => setRatingCount(count));    
   }, [seller]);
 
   return (

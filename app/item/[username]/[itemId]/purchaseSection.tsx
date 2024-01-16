@@ -46,7 +46,9 @@ export default function PurchaseSection({
 
   const [user, setUser] = useState<User | null>(null); // The current user
   const [userStatus, setUserStatus] = useState(UserStatus.Visitor); // The status of the current user (seller, buyer, or visitor)
+
   const [quantity, setQuantity] = useState<string>("1"); // The quantity of the item to be purchased
+
   const [loading, setLoading] = useState(false); // Whether the page is loading
   const [error, setError] = useState(""); // The error message to be displayed
   const [success, setSuccess] = useState(""); // The success message to be displayed
@@ -67,7 +69,21 @@ export default function PurchaseSection({
             userStatus state variable. Finally, check if the user is watching the item to update the 
             isWatched state variable.
     */
-    
+    getSession().then((session) => {
+      if (session) {
+        getUser(session?.user?.name || "").then((user) => {
+          setUser(user);
+          if (user?.username === sellerUsername) {
+            setUserStatus(UserStatus.Seller);
+          } else {
+            setUserStatus(UserStatus.Buyer);
+          }
+          isUserWatchingItem(user?.username || "", itemId).then((isWatched) => {
+            setIsWatched(isWatched);
+          });
+        });
+      }
+    });
   }, []);
 
   /* 
@@ -78,32 +94,47 @@ export default function PurchaseSection({
       TODO: Add a check to see if the user is logged in and is the buyer of the item
       If not, return
     */
+    if (!user || userStatus !== UserStatus.Buyer) {
+      return;
+    }
+    
 
     /*
       TODO: Set loading to true
     */
+    setLoading(true);
 
     /*
       TODO: Parse the quantity state variable to ensure that it is a valid integer
       If not, set error to "Invalid quantity!", set loading to false, and return
     */
+    const quantityInt = parseInt(quantity);
+    if (isNaN(quantityInt)) {
+      setError("Invalid quantity!");
+      setLoading(false);
+      return;
+    }
 
     /*
       TODO: Call the purchaseItem function
     */
-
-    /*
+    purchaseItem(itemId, quantityInt, user.username).then((success) => {
+      /*
       TODO: Set success to "Purchase successful!"
-    */
-    
-    /*
-      TODO: Set loading to false
-    */
+      */
+      if (success) {
+        setSuccess("Purchase successful!");
+      } else {
+        setError("Purchase failed!");
+      }
+  });
 
     /*
       TODO: Redirect the user to the purchases tab of their profile page
     */
-
+    setTimeout(function () {
+      window.location.href = `/seller/${user.username}`;
+    }, 2500);
   };
 
   /* 
@@ -114,29 +145,55 @@ export default function PurchaseSection({
       TODO: Add a check to see if the user is logged in and is the buyer of the item
       If not, return
     */
+    if (!user || userStatus !== UserStatus.Buyer) {
+      return;
+    }
 
     /*
       TODO: Retrieve the cart from local storage and parse it into a CartItem array
     */
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]") as CartItem[];
 
     /*
       TODO: Parse the quantity state variable to ensure that it is a valid integer
       If not, set error to "Invalid quantity!", set loading to false, and return
     */
+    const quantityInt = parseInt(quantity);
+    if (isNaN(quantityInt)) {
+      setError("Invalid quantity!");
+      setLoading(false);
+      return;
+    }
 
     /*
       TODO: If the item is already in the cart, increment the quantity of the item in the cart, 
       otherwise, add the item to the cart
     */
+    const item = cart.find((item) => item.id === itemId);
+    if (item) {
+      item.quantity += quantityInt;
+    } else {
+      cart.push({
+        title: itemTitle,
+        image: itemImage,
+        id: itemId,
+        price: itemPrice,
+        quantity: quantityInt,
+        sellerAddress: "",
+      });
+    }
 
     /*
       TODO: Stringify the cart and set it in local storage
     */
+    localStorage.setItem("cart", JSON.stringify(cart));
 
     /*
       TODO: Dispatches an event to update the cart icon in the navbar and displays a toast
       HINT: Dispatch an event with the name "cartUpdated"
     */
+    window.dispatchEvent(new Event("cartUpdated"));
+    toast({ title: "Item added to cart!" });
 
   };
 
@@ -148,171 +205,194 @@ export default function PurchaseSection({
       TODO: Add a check to see if the user is logged in and is the seller of the item
       If not, return
   */
+    if (!user || userStatus !== UserStatus.Seller) {
+      return;
+    }
 
     /*
       TODO: Set loading to true
     */
+    setLoading(true);
 
     /*
       TODO: Call the unlistItem function
     */
-
+    unlistItem(itemId).then((success) => {
+      console.log("unlisted")
     /*
       TODO: Set success to "Listing removed!"
     */
-
+    if (success) {
+      setSuccess("Listing removed!");
+    }
     /*
       TODO: Set loading to false
     */
+    setLoading(false);
+    });
 
     /*
       TODO: Redirect the user to their profile page
     */
-
+   // wait 2.5 seconds before redirecting
+    setTimeout(function () {
+      window.location.href = `/seller/${user.username}`;
+    }, 2500);
   };
 
-  /*
-    TODO: Render a different UI depending on the user's status (seller, buyer, or visitor)
 
-    - Seller: If the user is the seller of the item, display a button to remove the listing. Use the 
-              UI provided below: 
-              ```
-              <Card className="items-center p-6 flex flex-col gap-3 w-3/12 sticky top-6">
-                <Button
-                  disabled={loading || listed == 0}
-                  className="w-full"
-                  variant="destructive"
-                  onClick={onRemoveListing}
-                >
-                  {loading
-                    ? "Loading..."
-                    : success
-                    ? success
-                    : error
-                    ? error
-                    : listed == 1
-                    ? "Remove listing"
-                    : "Listing removed"}
-                </Button>
-              </Card>
-              ```
-    - Buyer: If the user is the buyer of the item, display buttons to buy the item, add it to the 
-              cart, and add it to the watch list. Use the UI provided below: 
-              ```
-              <Card className="items-center p-6 flex flex-col gap-3 w-3/12 sticky top-6">
-                <div className="flex flex-col items-center w-full gap-4">
-                  <div className="flex justify-center flex-col items-start w-full">
-                    <p className="text-3xl font-semibold">${itemPrice}</p>
-                    <p
-                      className={cn(
-                        `text-xl font-semibold`,
-                        available === 0 ? "text-red-600" : "text-green-600"
-                      )}
-                    >
-                      {available === 0 ? "Out of Stock" : "In Stock"}
-                    </p>
-                  </div>
+    // TODO: Render a different UI depending on the user's status (seller, buyer, or visitor)
 
-                  <div className="w-full flex flex-row items-center justify-start gap-4">
-                    <Label htmlFor="username" className="text-center text-lg">
-                      Qty:
-                    </Label>
-                    <Input
-                      id="username"
-                      value={quantity}
-                      onChange={(e) => {
-                        setQuantity(e.target.value);
-                      }}
-                      type="number"
-                      className={
-                        "w-[90px] bg-white flex flex-row items-center border border-black/25 rounded py-2 px-3 space-x-2" +
-                        `${
-                          isNaN(parseInt(quantity)) || parseInt(quantity) > available
-                            ? " text-red-500"
-                            : ""
-                        }`
-                      }
-                    />
-                  </div>
-                  <Button
-                    disabled={loading || available == 0 || listed == 0}
-                    className="w-full font-medium bg-[#FFA41C] text-black hover:bg-[#FFB41C]"
-                    onClick={onBuyNow}
-                  >
-                    {loading
-                      ? "Loading..."
-                      : success
-                      ? success
-                      : error
-                      ? error
-                      : available == 0
-                      ? "Out of stock"
-                      : listed == 1
-                      ? "Buy now"
-                      : "Item not available"}
-                  </Button>
-                  <Button
-                    disabled={loading || available == 0 || listed == 0}
-                    className="w-full font-medium bg-[#FFD813] text-black hover:bg-[#FFE813]"
-                    onClick={onAddToCart}
-                  >
-                    <ShoppingCartIcon className="w-4 h-4 mr-2" />
-                    {loading
-                      ? "Loading..."
-                      : success
-                      ? success
-                      : error
-                      ? error
-                      : available == 0
-                      ? "Out of stock"
-                      : listed == 1
-                      ? "Add to cart"
-                      : "Item not available"}
-                  </Button>
-                  <div className="py-2 w-full">
-                    <div className="bg-black/50 w-full h-px" />
-                  </div>
-                  {isWatched ? (
-                    <Button
-                      disabled={loading || available == 0 || listed == 0}
-                      variant="outline"
-                      className="w-full font-medium  rounded-lg text-black "
-                      onClick={() => {
-                        if (!user) {
-                          return;
-                        }
-                        removeItemFromWatchList(user.username, itemId);
-                        setIsWatched(false);
-                      }}
-                    >
-                      Remove from Watch List
-                    </Button>
-                  ) : (
-                    <Button
-                      disabled={loading || available == 0 || listed == 0}
-                      className="w-full font-medium bg-white border border-black/50 py-3 rounded-full text-black hover:bg-white"
-                      onClick={() => {
-                        if (!user) {
-                          return;
-                        }
-                        addItemToWatchList(user.username, itemId);
-                        setIsWatched(true);
-                      }}
-                    >
-                      Add to Watch List
-                    </Button>
-                  )}
-                </div>
-              </Card>
-              ```
-    - Visitor: If the user is not logged in, display a button telling them to log in. Use the UI 
-                provided below: 
-                ```
-                <Card className="items-center p-6 flex flex-col gap-3 w-3/12 sticky top-6">
-                  <Button disabled variant="outline" className="w-full">
-                    Log in to purchase
-                  </Button>
-                </Card>
-                ``` 
-  */
+    // - Seller: If the user is the seller of the item, display a button to remove the listing. Use the 
+    //           UI provided below: 
+    if (userStatus === UserStatus.Seller) {
+      return (
+        <Card className="items-center p-6 flex flex-col gap-3 w-3/12 sticky top-6">
+          <Button
+            disabled={loading || listed == 0}
+            className="w-full"
+            variant="destructive"
+            onClick={onRemoveListing}
+          >
+            {loading
+              ? "Loading..."
+              : success
+              ? success
+              : error
+              ? error
+              : listed == 1
+              ? "Remove listing"
+              : "Listing removed"}
+          </Button>
+        </Card>
+      );
+      }
+    //           ```
+    // - Buyer: If the user is the buyer of the item, display buttons to buy the item, add it to the 
+    //           cart, and add it to the watch list. Use the UI provided below: 
+    //           ```
+    else if (userStatus === UserStatus.Buyer) {
+      return (
+      <Card className="items-center p-6 flex flex-col gap-3 w-3/12 sticky top-6">
+        <div className="flex flex-col items-center w-full gap-4">
+          <div className="flex justify-center flex-col items-start w-full">
+            <p className="text-3xl font-semibold">${itemPrice}</p>
+            <p
+              className={cn(
+                `text-xl font-semibold`,
+                available === 0 ? "text-red-600" : "text-green-600"
+              )}
+            >
+              {available === 0 ? "Out of Stock" : "In Stock"}
+            </p>
+          </div>
+
+          <div className="w-full flex flex-row items-center justify-start gap-4">
+            <Label htmlFor="username" className="text-center text-lg">
+              Qty:
+            </Label>
+            <Input
+              id="username"
+              value={quantity}
+              onChange={(e) => {
+                setQuantity(e.target.value);
+              }}
+              type="number"
+              className={
+                "w-[90px] bg-white flex flex-row items-center border border-black/25 rounded py-2 px-3 space-x-2" +
+                `${
+                  isNaN(parseInt(quantity)) || parseInt(quantity) > available
+                    ? " text-red-500"
+                    : ""
+                }`
+              }
+            />
+          </div>
+          <Button
+            disabled={loading || available == 0 || listed == 0}
+            className="w-full font-medium bg-[#FFA41C] text-black hover:bg-[#FFB41C]"
+            onClick={onBuyNow}
+          >
+            {loading
+              ? "Loading..."
+              : success
+              ? success
+              : error
+              ? error
+              : available == 0
+              ? "Out of stock"
+              : listed == 1
+              ? "Buy now"
+              : "Item not available"}
+          </Button>
+          <Button
+            disabled={loading || available == 0 || listed == 0}
+            className="w-full font-medium bg-[#FFD813] text-black hover:bg-[#FFE813]"
+            onClick={onAddToCart}
+          >
+            <ShoppingCartIcon className="w-4 h-4 mr-2" />
+            {loading
+              ? "Loading..."
+              : success
+              ? success
+              : error
+              ? error
+              : available == 0
+              ? "Out of stock"
+              : listed == 1
+              ? "Add to cart"
+              : "Item not available"}
+          </Button>
+          <div className="py-2 w-full">
+            <div className="bg-black/50 w-full h-px" />
+          </div>
+          {isWatched ? (
+            <Button
+              disabled={loading || available == 0 || listed == 0}
+              variant="outline"
+              className="w-full font-medium  rounded-lg text-black "
+              onClick={() => {
+                if (!user) {
+                  return;
+                }
+                removeItemFromWatchList(user.username, itemId);
+                setIsWatched(false);
+              }}
+            >
+              Remove from Watch List
+            </Button>
+          ) : (
+            <Button
+              disabled={loading || available == 0 || listed == 0}
+              className="w-full font-medium bg-white border border-black/50 py-3 rounded-full text-black hover:bg-white"
+              onClick={() => {
+                if (!user) {
+                  return;
+                }
+                addItemToWatchList(user.username, itemId);
+                setIsWatched(true);
+              }}
+            >
+              Add to Watch List
+            </Button>
+          )}
+        </div>
+      </Card>
+      );
+    }
+    //           ```
+    // - Visitor: If the user is not logged in, display a button telling them to log in. Use the UI 
+    //             provided below: 
+    //             ```
+    else {
+      return(
+      <Card className="items-center p-6 flex flex-col gap-3 w-3/12 sticky top-6">
+        <Button disabled variant="outline" className="w-full">
+          Log in to purchase
+        </Button>
+      </Card>
+      )
+    }
+  //               ``` 
+  // */
 }

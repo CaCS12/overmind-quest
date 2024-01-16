@@ -42,11 +42,22 @@ export default function ProfileButton() {
   /* 
     On page load, get the current user.
   */
+    // status === "authenticated" ? console.log(session?.user?.name) 
+    // : status === "loading" ? console.log("Loading...")
+    // : console.log("Not authenticated, please sign in")
   useEffect(() => {
     /* 
       TODO: If the session exists and the user is logged in, get the user from the database and update
       the user state. Then, get the user's shop balance and update the shop balance state.
     */
+    if (session && status === "authenticated") {
+      getUser(session?.user?.name || "").then((user) => {
+        setUser(user);
+      });
+      getUserShopBalance(session?.user?.name || "").then((balance)=> {
+        setShopBalance(balance ? balance.toString() : "0");
+      });
+    }
     
   }, [session]);
 
@@ -57,157 +68,161 @@ export default function ProfileButton() {
     /* 
       TODO: Create the user
     */
+    const newUser = {
+      username: usernameInput,
+      password: passwordInput,
+    }; // PLACEHOLDER
+
+    await createUser(newUser.username, newUser.password);
 
     /*
       TODO: Sign in the newly created user 
     */
+    await signIn("credentials", {
+      username: usernameInput,
+      password: passwordInput,
+    });
 
   };
 
-  /* 
-    TODO: If the user is not logged in (unauthenticated), return the provided UI below: 
-    ```
-    <div>
-      <Button
-        className="bg-[#194D47] hover:bg-[#2D6E56]"
-        onClick={() => setShowModal(true)}
-      >
-        Connect
+    // TODO: If the user is not logged in (unauthenticated), return the provided UI below
+    if (status === "unauthenticated") return (
+      <div>
+        <Button
+          className="bg-[#194D47] hover:bg-[#2D6E56]"
+          onClick={() => setShowModal(true)}
+        >
+          Connect
+        </Button>
+        <Dialog open={showModal} onOpenChange={() => {}}>
+          <DialogContent className="sm:max-w-[455px]">
+            <Tabs defaultValue="account" className="w-[400px]">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="account">Log in</TabsTrigger>
+                <TabsTrigger value="password">Sign up</TabsTrigger>
+              </TabsList>
+              <TabsContent value="account">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Log in</CardTitle>
+                    <CardDescription>
+                      Log into your account here.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="name">username</Label>
+                      <Input
+                        id="name"
+                        placeholder="jsmith"
+                        value={usernameInput}
+                        onChange={(e) => {
+                          setUsernameInput(e.currentTarget.value);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="password">password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Password123"
+                        value={passwordInput}
+                        onChange={(e) => {
+                          setPasswordInput(e.currentTarget.value);
+                        }}
+                      />
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      className="w-full"
+                      onClick={() =>
+                        signIn("credentials", {
+                          username: usernameInput,
+                          password: passwordInput,
+                        })
+                      }
+                    >
+                      Log in
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+              <TabsContent value="password">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Create your new marketplace account.</CardTitle>
+                    <CardDescription>
+                      Enter your username and password below.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="name">username</Label>
+                      <Input
+                        id="name"
+                        placeholder="jsmith"
+                        value={usernameInput}
+                        onChange={(e) => {
+                          setUsernameInput(e.currentTarget.value);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="password">password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Password123"
+                        value={passwordInput}
+                        onChange={(e) => {
+                          setPasswordInput(e.currentTarget.value);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="password">Confirm password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Password123"
+                        value={secondPasswordInput}
+                        onChange={(e) => {
+                          setSecondPasswordInput(e.currentTarget.value);
+                        }}
+                      />
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      className="w-full"
+                      disabled={
+                        passwordInput !== secondPasswordInput ||
+                        passwordInput.length < 8 ||
+                        usernameInput.length < 3
+                      }
+                      onClick={onSignUp}
+                    >
+                      Sign up
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+
+    // If the user is loading or the user is null, return the provided loading UI below:
+    if (status === "loading" || !user) return (
+      <Button className="font-mono bg-[#194D47] hover:bg-[#2D6E56]">
+        <Loader2 className="animate-spin" />
       </Button>
-      <Dialog open={showModal} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-[455px]">
-          <Tabs defaultValue="account" className="w-[400px]">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="account">Log in</TabsTrigger>
-              <TabsTrigger value="password">Sign up</TabsTrigger>
-            </TabsList>
-            <TabsContent value="account">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Log in</CardTitle>
-                  <CardDescription>
-                    Log into your account here.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="name">username</Label>
-                    <Input
-                      id="name"
-                      placeholder="jsmith"
-                      value={usernameInput}
-                      onChange={(e) => {
-                        setUsernameInput(e.currentTarget.value);
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="password">password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Password123"
-                      value={passwordInput}
-                      onChange={(e) => {
-                        setPasswordInput(e.currentTarget.value);
-                      }}
-                    />
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    className="w-full"
-                    onClick={() =>
-                      signIn("credentials", {
-                        username: usernameInput,
-                        password: passwordInput,
-                      })
-                    }
-                  >
-                    Log in
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            <TabsContent value="password">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create your new marketplace account.</CardTitle>
-                  <CardDescription>
-                    Enter your username and password below.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="name">username</Label>
-                    <Input
-                      id="name"
-                      placeholder="jsmith"
-                      value={usernameInput}
-                      onChange={(e) => {
-                        setUsernameInput(e.currentTarget.value);
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="password">password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Password123"
-                      value={passwordInput}
-                      onChange={(e) => {
-                        setPasswordInput(e.currentTarget.value);
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="password">Confirm password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Password123"
-                      value={secondPasswordInput}
-                      onChange={(e) => {
-                        setSecondPasswordInput(e.currentTarget.value);
-                      }}
-                    />
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    className="w-full"
-                    disabled={
-                      passwordInput !== secondPasswordInput ||
-                      passwordInput.length < 8 ||
-                      usernameInput.length < 3
-                    }
-                    onClick={onSignUp}
-                  >
-                    Sign up
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-    </div>
-    ```
-  */
+    );
 
-  /* 
-    If the user is loading or the user is null, return the provided loading UI below:
-    ```
-    <Button className="font-mono bg-[#194D47] hover:bg-[#2D6E56]">
-      <Loader2 className="animate-spin" />
-    </Button>
-    ```   
-  */
-
-  /* 
-    Otherwise, return this UI: 
-    ```
+    if (status === "authenticated") return (
     <div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -235,8 +250,7 @@ export default function ProfileButton() {
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-    ```
-  */
+    );
 
   return <></>;
 }

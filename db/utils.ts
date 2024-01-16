@@ -55,7 +55,7 @@ export async function getUser(username: string) {
       headers: { "Content-Type": "application/json" },
     }
   );
-  const userFromDbJson = await userFromDb.json();
+  const userFromDbJson = await userFromDb.json()
   return userFromDbJson as User;
 }
 
@@ -126,7 +126,7 @@ export async function getItems(queryParams?: ItemQueryFilters) {
       cache: "no-cache",
     });
     const itemsJson = await items.json();
-    console.log("getItems", itemsJson);
+    // console.log("getItems", itemsJson);
     return itemsJson;
   } catch (error) {
     console.error(error);
@@ -149,7 +149,7 @@ export async function getItemById(itemId: string): Promise<Item | null> {
       }
     );
     const itemJson = await item.json();
-    console.log("getItemById", itemJson);
+    // console.log("getItemById", itemJson);
     return itemJson;
   } catch (error) {
     console.error(error);
@@ -171,7 +171,7 @@ export async function getUserNumberOfPurchases(username: string) {
       }
     );
     const purchasesJson = (await purchases.json()) as Purchase[];
-    console.log("getUserNumberOfPurchases", purchasesJson);
+    // console.log("getUserNumberOfPurchases", purchasesJson);
     return purchasesJson.length;
   } catch (error) {
     console.error(error);
@@ -193,7 +193,7 @@ export async function getUserNumberOfSales(username: string) {
       }
     );
     const purchasesJson = (await purchases.json()) as Purchase[];
-    console.log("getUserNumberOfSales", purchasesJson);
+    // console.log("getUserNumberOfSales", purchasesJson);
     return purchasesJson.length;
   } catch (error) {
     console.error(error);
@@ -322,7 +322,7 @@ export async function getUserSales(username: string) {
       }
     );
     const purchasesJson = (await purchases.json()) as Purchase[];
-    console.log("getUserSales", purchasesJson);
+    // console.log("getUserSales", purchasesJson);
     return purchasesJson;
   } catch (error) {
     console.error(error);
@@ -415,7 +415,7 @@ export async function getUserShopBalance(
       }
     );
     const balanceJson = await balance.json();
-    console.log("getUserShopBalance", balanceJson);
+    // console.log("getUserShopBalance", balanceJson);
     return balanceJson.balance;
   } catch (error) {
     console.error(error);
@@ -573,7 +573,7 @@ export async function getStarsForTarget(targetId: string) {
       }
     );
     const resJson = await res.json();
-    console.log("getRatingForItem", resJson);
+    // console.log("getRatingForItem", resJson);
     return resJson as number;
   } catch (error) {
     console.error(error);
@@ -595,7 +595,7 @@ export async function getReviewsForTarget(targetId: string) {
       }
     );
     const resJson = await res.json();
-    console.log("getRatingForItem", resJson);
+    // console.log("getRatingForItem", resJson);
     return resJson as Rating[];
   } catch (error) {
     console.error(error);
@@ -708,7 +708,7 @@ export async function removeItemFromWatchList(
   Checks if the given item is in the user's watch list.
 */
 export async function isUserWatchingItem(username: string, itemId: string) {
-  console.log("isUserWatchingItem", username, itemId);
+  // console.log("isUserWatchingItem", username, itemId);
 
   try {
     const res = await fetch(
@@ -720,7 +720,7 @@ export async function isUserWatchingItem(username: string, itemId: string) {
       }
     );
     const resJson = await res.json();
-    console.log("isUserWatchingItem", resJson);
+    // console.log("isUserWatchingItem", resJson);
     return resJson.length > 0;
   } catch (error) {
     console.error(error);
